@@ -5,175 +5,137 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Лаборатория ИИ</title>
 <style>
-/* Лабораторный стенд: данные слева, холст в центре, модель справа, проверка внизу */
-:root {
-  --bg:#eef0f2; --card:#ffffff; --ink:#16191d; --mute:#5f6670; --line:#d5d9de; --soft:#f5f6f8;
-  --acc:#1f5fd1; --ok:#1d8a4a; --bad:#c33b2b; --warn:#b7791f; --head:#14181d; --headink:#f4f6f8; --headmute:#9aa3ad;
-  --pos:#e0782a; --neg:#2f6fd6;
-  --mono: ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-}
+:root { --bg:#f1f2ef; --card:#fff; --ink:#1b1d1f; --mute:#62666b; --line:#d7d9d4; --soft:#f5f6f3;
+  --acc:#2a5bd7; --ok:#1d8a4a; --bad:#c33b2b; --warn:#b06f12; --head:#1b1d1f; --pos:#e0782a; }
 * { box-sizing:border-box; }
 [hidden] { display:none !important; }
 html, body { margin:0; }
-body { background:var(--bg); color:var(--ink); font:15px/1.4 "Segoe UI", system-ui, Arial, sans-serif; }
-header { background:var(--head); color:var(--headink); padding:10px max(16px, env(safe-area-inset-left)); display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
-header h1 { margin:0; font-size:20px; letter-spacing:.01em; }
-header span { color:var(--headmute); font-size:13px; }
-header a { color:var(--headmute); font-size:13px; margin-left:auto; }
-.wrap { max-width:1360px; margin:0 auto; padding:14px max(16px, env(safe-area-inset-left)) 24px; display:grid; gap:14px;
-  grid-template-columns: minmax(250px, 1fr) auto minmax(300px, 1.15fr); grid-template-areas: "data pad model" "test test model"; align-items:start; }
-@media (max-width:1060px) { .wrap { grid-template-columns:1fr; grid-template-areas:"pad" "data" "model" "test"; } }
+body { background:var(--bg); color:var(--ink); font:15px/1.45 "Segoe UI", system-ui, Arial, sans-serif; }
+header { background:var(--head); color:#f3f4f1; padding:10px max(16px, env(safe-area-inset-left)); display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+header h1 { margin:0; font-size:20px; }
+header span { color:#a5a9a2; font-size:13px; }
+header a { color:#a5a9a2; font-size:13px; margin-left:auto; }
+.steps { max-width:1300px; margin:12px auto 0; padding:0 max(16px, env(safe-area-inset-left)); display:flex; gap:8px; flex-wrap:wrap; font-size:14px; color:var(--mute); }
+.steps b { color:var(--ink); }
+.wrap { max-width:1300px; margin:0 auto; padding:12px max(16px, env(safe-area-inset-left)) 24px; display:grid; gap:14px;
+  grid-template-columns: minmax(240px,1fr) auto minmax(280px,1.1fr); grid-template-areas:"data pad brain" "test test brain"; align-items:start; }
+@media (max-width:1000px) { .wrap { grid-template-columns:1fr; grid-template-areas:"pad" "data" "brain" "test"; } }
 .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; min-width:0; }
-#cData { grid-area:data; } #cPad { grid-area:pad; } #cModel { grid-area:model; } #cTest { grid-area:test; }
-h2 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--mute); margin:0 0 10px; font-weight:700; }
-h3 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--mute); margin:16px 0 8px; font-weight:700; }
-button, select { font:inherit; color:var(--ink); border:1px solid #b9bfc6; background:var(--card); border-radius:7px; padding:6px 11px; cursor:pointer; }
+#cData{grid-area:data} #cPad{grid-area:pad} #cBrain{grid-area:brain} #cTest{grid-area:test}
+h2 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--mute); margin:0 0 10px; }
+h3 { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--mute); margin:16px 0 8px; }
+button { font:inherit; color:var(--ink); border:1px solid #bdc0b9; background:#fff; border-radius:7px; padding:6px 12px; cursor:pointer; }
 button:hover { background:var(--soft); }
 button:disabled { opacity:.45; cursor:default; }
-button:focus-visible, input:focus-visible, select:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
-button.primary { background:var(--acc); border-color:var(--acc); color:#fff; font-weight:600; }
-button.primary:hover { filter:brightness(1.08); background:var(--acc); }
+button:focus-visible, input:focus-visible { outline:2px solid var(--acc); outline-offset:2px; }
+.big-btn { background:var(--acc); border-color:var(--acc); color:#fff; font-weight:600; padding:8px 16px; }
+.big-btn:hover { background:var(--acc); filter:brightness(1.08); }
 .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-.hint { font-size:12.5px; color:var(--mute); margin:8px 0 0; }
+.hint { font-size:13px; color:var(--mute); margin:8px 0 0; }
 .cls { border:1px solid var(--line); border-radius:8px; padding:7px 9px; margin-bottom:8px; }
 .cls-top { display:flex; align-items:center; gap:8px; }
 .dot { width:13px; height:13px; border-radius:50%; flex:none; }
 .cls input { flex:1; min-width:0; font:inherit; font-weight:600; color:var(--ink); background:transparent; border:1px solid transparent; border-radius:5px; padding:2px 5px; }
 .cls input:hover { border-color:var(--line); }
-.count { font-size:12.5px; color:var(--mute); white-space:nowrap; font-variant-numeric:tabular-nums; }
-.x { padding:1px 8px; font-size:13px; }
-.thumbs { display:flex; flex-wrap:wrap; gap:3px; margin-top:6px; max-height:132px; overflow:auto; }
+.count { font-size:13px; color:var(--mute); white-space:nowrap; }
+.x { padding:1px 8px; }
+.thumbs { display:flex; flex-wrap:wrap; gap:3px; margin-top:6px; max-height:100px; overflow:auto; }
 .thumbs canvas { width:28px; height:28px; border:1px solid var(--line); border-radius:3px; image-rendering:pixelated; cursor:pointer; background:#fff; }
 .thumbs canvas:hover { border-color:var(--bad); }
 #pad { display:block; width:300px; max-width:100%; height:auto; aspect-ratio:1; background:#fff; border:2px solid var(--ink); border-radius:8px; touch-action:none; cursor:crosshair; }
 .addbtn { color:#fff; border:none; font-weight:600; }
 .addbtn:hover { filter:brightness(1.1); }
-.seg { display:inline-flex; border:1px solid #b9bfc6; border-radius:8px; overflow:hidden; }
-.seg button { border:none; border-radius:0; padding:7px 12px; }
-.seg button[aria-pressed="true"] { background:var(--ink); color:var(--card); }
-.field { display:grid; grid-template-columns: 1fr auto; gap:2px 10px; align-items:center; margin:8px 0; font-size:14px; }
-.field input[type=range] { grid-column:1 / -1; width:100%; }
-.field output { font-family:var(--mono); font-size:13px; font-variant-numeric:tabular-nums; }
-.status { font-size:13px; padding:6px 9px; border-radius:6px; background:var(--soft); margin-top:8px; }
+.tabs { display:flex; gap:8px; }
+.tab { flex:1; text-align:left; padding:9px 11px; border-radius:9px; }
+.tab b { display:block; font-size:15px; }
+.tab span { font-size:12.5px; color:var(--mute); }
+.tab[aria-pressed="true"] { border:2px solid var(--ink); padding:8px 10px; background:var(--soft); }
+.status { font-size:14px; padding:8px 10px; border-radius:7px; background:var(--soft); margin-top:10px; }
 .status.stale { color:var(--warn); }
-#chart { width:100%; height:auto; display:block; margin-top:8px; }
-.legend { display:flex; gap:14px; font-size:12px; color:var(--mute); margin-top:4px; }
-.legend i { display:inline-block; width:14px; height:3px; vertical-align:middle; margin-right:5px; border-radius:2px; }
-#verdict { font-size:24px; font-weight:700; min-height:32px; margin:2px 0 6px; }
-.bar { margin:6px 0; }
-.bar-l { display:flex; justify-content:space-between; font-size:13.5px; }
-.bar-l b { font-family:var(--mono); font-weight:600; }
-.bar-t { height:13px; background:#e8eaed; border-radius:7px; overflow:hidden; position:relative; }
+.prog { height:8px; background:#e7e8e4; border-radius:4px; overflow:hidden; margin-top:8px; }
+.prog i { display:block; height:100%; width:0; background:var(--acc); }
+#verdict { font-size:26px; font-weight:700; min-height:36px; margin:2px 0 6px; }
+.bar { margin:7px 0; }
+.bar-l { display:flex; justify-content:space-between; font-size:14px; }
+.bar-t { height:14px; background:#e7e8e4; border-radius:7px; overflow:hidden; }
 .bar-f { height:100%; width:0; transition:width .25s; }
-.thr { position:absolute; top:0; bottom:0; width:2px; background:var(--ink); opacity:.5; }
-.why { display:flex; gap:10px; flex-wrap:wrap; align-items:flex-start; }
-.why figure { margin:0; text-align:center; font-size:11.5px; color:var(--mute); }
-.why canvas { width:64px; height:64px; image-rendering:pixelated; border:2px solid var(--line); border-radius:4px; display:block; background:#fff; }
-.scale { display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--mute); margin-top:6px; }
-.scale span.g { width:90px; height:8px; border-radius:4px; background:linear-gradient(90deg, var(--neg), #fff, var(--pos)); border:1px solid var(--line); }
-.mx { border-collapse:collapse; font-variant-numeric:tabular-nums; }
-.mx th, .mx td { border:1px solid var(--line); padding:5px 9px; text-align:center; font-size:13.5px; }
-.mx th { background:var(--soft); font-weight:600; }
-.mx td.diag { background:#e3f3e8; font-weight:700; }
-.mx td.off { color:var(--bad); }
-.mx td.zero { color:#b5bbc2; }
-.big { font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; }
-.testgrid { display:grid; grid-template-columns: minmax(220px, 1fr) minmax(260px, 1.4fr); gap:16px; }
-@media (max-width:700px) { .testgrid { grid-template-columns:1fr; } }
-.scroll { overflow-x:auto; }
-#toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:var(--ink); color:var(--card); padding:8px 14px; border-radius:8px; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; }
+.why { display:flex; gap:12px; flex-wrap:wrap; }
+.why figure { margin:0; text-align:center; font-size:12px; color:var(--mute); }
+.why canvas { width:70px; height:70px; image-rendering:pixelated; border:3px solid var(--line); border-radius:6px; display:block; background:#fff; }
+label.chk { display:flex; gap:8px; align-items:center; font-size:14px; margin-top:10px; cursor:pointer; }
+.score { font-size:26px; font-weight:700; }
+.mist { margin:6px 0 0; padding-left:18px; font-size:14px; }
+details { margin-top:14px; font-size:14px; }
+summary { cursor:pointer; color:var(--mute); }
+#toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); background:var(--ink); color:#fff; padding:8px 14px; border-radius:8px; font-size:14px; opacity:0; transition:opacity .2s; pointer-events:none; }
 #toast.on { opacity:.95; }
 @media (prefers-reduced-motion: reduce) { .bar-f, #toast { transition:none; } }
 </style>
 </head>
 <body>
-<header>
-  <h1>Лаборатория ИИ</h1><span>Основы ИИ · продвинутая версия</span>
-  <a href="./">простая версия</a>
-</header>
+<header><h1>Лаборатория ИИ</h1><span>Основы ИИ</span><a href="./">простая версия</a></header>
+<div class="steps"><span><b>1.</b> Нарисуй примеры</span><span>→</span><span><b>2.</b> Выбери мозг и научи</span><span>→</span><span><b>3.</b> Проверь на новых рисунках</span></div>
 
 <div class="wrap">
   <section class="card" id="cData">
-    <h2>1. Данные</h2>
+    <h2>Примеры</h2>
     <div id="classes"></div>
     <div class="row">
       <button id="addClass">+ Класс</button>
-      <button id="demo">Демо-набор</button>
-      <button id="resetAll">Сбросить всё</button>
+      <button id="demo">Готовые примеры</button>
+      <button id="resetAll">Начать заново</button>
     </div>
-    <h3>Файл с данными</h3>
-    <div class="row">
-      <button id="exportBtn">Сохранить в файл</button>
-      <button id="importBtn">Загрузить файл</button>
-      <input type="file" id="importFile" accept=".json,application/json" hidden>
-    </div>
-    <p class="hint">Через файл можно собрать общий набор: каждый сохраняет свои рисунки, учитель объединяет. Щелчок по маленькой картинке удаляет пример.</p>
+    <p class="hint">Имя класса можно поменять. Щелчок по маленькой картинке удаляет пример.</p>
+    <details>
+      <summary>Сохранить или загрузить рисунки</summary>
+      <div class="row" style="margin-top:8px">
+        <button id="exportBtn">Сохранить в файл</button>
+        <button id="importBtn">Загрузить файл</button>
+        <input type="file" id="importFile" accept=".json,application/json" hidden>
+      </div>
+      <p class="hint">Загрузишь несколько файлов подряд — рисунки сложатся в один общий набор.</p>
+    </details>
   </section>
 
   <section class="card" id="cPad">
-    <h2>2. Холст</h2>
+    <h2>Холст</h2>
     <canvas id="pad" width="300" height="300"></canvas>
     <div class="row" style="margin-top:10px"><button id="clear">Очистить</button></div>
-    <h3>Добавить как пример</h3>
+    <h3>Добавить рисунок в примеры</h3>
     <div class="row" id="addRow"></div>
-    <h3>Как видит машина</h3>
-    <div class="row" style="gap:12px;align-items:center">
-      <canvas id="see" width="16" height="16" style="width:96px;height:96px;image-rendering:pixelated;border:1px solid var(--line);border-radius:4px;background:#fff"></canvas>
-      <span class="hint" style="margin:0;max-width:170px">16×16 клеток = 256 чисел от 0 (белое) до 1 (чёрное).</span>
-    </div>
   </section>
 
-  <section class="card" id="cModel">
-    <h2>3. Модель</h2>
-    <div class="seg" role="group" aria-label="Тип модели">
-      <button id="mKnn" aria-pressed="true">Ближайшие соседи</button>
-      <button id="mNet" aria-pressed="false">Нейросеть</button>
+  <section class="card" id="cBrain">
+    <h2>Мозг машины</h2>
+    <div class="tabs" role="group" aria-label="Какой мозг">
+      <button class="tab" id="mKnn" aria-pressed="true"><b>Ищет похожее</b><span>сравнивает с твоими примерами</span></button>
+      <button class="tab" id="mNet" aria-pressed="false"><b>Нейросеть</b><span>учится сама, нужно обучить</span></button>
     </div>
-
-    <div id="knnBox">
-      <div class="field"><label for="kSl">Соседей (k)</label><output id="kOut">3</output><input type="range" id="kSl" min="1" max="9" step="1" value="3"></div>
-      <div class="status">Учиться не нужно: модель просто помнит все примеры и ищет k самых похожих. Проценты — сколько из k соседей за каждый класс.</div>
-    </div>
-
     <div id="netBox" hidden>
-      <div class="field"><label for="hSl">Скрытых нейронов</label><output id="hOut">16</output><input type="range" id="hSl" min="0" max="5" step="1" value="2"></div>
-      <div class="field"><label for="lrSl">Скорость обучения</label><output id="lrOut">0.010</output><input type="range" id="lrSl" min="0" max="5" step="1" value="2"></div>
-      <div class="field"><label for="epSl">Эпох</label><output id="epOut">60</output><input type="range" id="epSl" min="10" max="300" step="10" value="60"></div>
-      <div class="row" style="margin:6px 0 2px">
-        <label class="row" style="gap:6px;font-size:14px"><input type="checkbox" id="aug"> Аугментация (сдвиги рисунков)</label>
-        <label class="row" style="gap:6px;font-size:14px"><input type="checkbox" id="val" checked> Отложить 20% на проверку</label>
-      </div>
-      <div class="row" style="margin-top:6px"><button class="primary" id="train">Обучить</button><button id="stop" disabled>Стоп</button></div>
-      <div class="status" id="netStatus">Нейросеть ещё не обучена.</div>
-      <canvas id="chart" width="600" height="230"></canvas>
-      <div class="legend"><span><i style="background:repeating-linear-gradient(90deg,var(--acc) 0 5px,transparent 5px 8px)"></i>точность на обучающих</span><span><i style="background:var(--pos)"></i>на отложенных</span></div>
+      <div class="row" style="margin-top:10px"><button class="big-btn" id="train">Обучить нейросеть</button></div>
+      <div class="prog" id="prog" hidden><i></i></div>
+      <div class="status" id="netStatus">Нарисуй примеры и нажми «Обучить».</div>
     </div>
 
     <h3>Что думает машина</h3>
     <div id="verdict">—</div>
     <div id="bars"></div>
-    <div class="field" style="margin-top:10px"><label for="thrSl">Порог «не уверена»</label><output id="thrOut">выкл.</output><input type="range" id="thrSl" min="0" max="95" step="5" value="0"></div>
+    <label class="chk"><input type="checkbox" id="unsure"> Можно отвечать «Не знаю», если машина не уверена</label>
 
-    <h3 id="whyTitle">Почему</h3>
+    <h3 id="whyTitle">Почему она так решила</h3>
     <div class="why" id="why"></div>
-    <div class="scale" id="whyScale" hidden><span>минус</span><span class="g"></span><span>плюс</span></div>
     <p class="hint" id="whyHint"></p>
   </section>
 
   <section class="card" id="cTest">
-    <h2>4. Проверка</h2>
-    <div class="testgrid">
-      <div>
-        <p class="hint" style="margin-top:0">Нарисуйте новый рисунок (не добавляя в данные) и нажмите, что вы <b>на самом деле</b> рисовали. Машина своё уже сказала.</p>
-        <div class="row" id="truthRow" style="margin-top:8px"></div>
-        <div style="margin-top:12px">Точность: <span class="big" id="acc">—</span> <span class="hint" id="accN"></span></div>
-        <div class="row" style="margin-top:8px"><button id="resetTest">Обнулить проверку</button></div>
-      </div>
-      <div>
-        <div class="hint" style="margin:0 0 6px">Матрица ошибок: строки — что рисовали, столбцы — что сказала машина.</div>
-        <div class="scroll"><table class="mx" id="mx"></table></div>
-      </div>
+    <h2>Проверка</h2>
+    <p class="hint" style="margin-top:0">Нарисуй новый рисунок (не добавляй его в примеры) и нажми, что ты на самом деле рисовал.</p>
+    <div class="row" id="truthRow" style="margin-top:10px"></div>
+    <div class="row" style="margin-top:12px;gap:14px;align-items:baseline">
+      <span>Угадала: <span class="score" id="score">0 из 0</span></span>
+      <button id="resetTest">Обнулить</button>
     </div>
+    <div id="mistBox" hidden><div class="hint" style="margin-top:10px">Где ошибалась:</div><ul class="mist" id="mist"></ul></div>
   </section>
 </div>
 <div id="toast" role="status"></div>
@@ -181,278 +143,139 @@ button.primary:hover { filter:brightness(1.08); background:var(--acc); }
 <script>
 (function () {
   "use strict";
-  var COLORS = ["#1f5fd1", "#e0782a", "#1d8a4a", "#9b3fb5", "#c33b2b", "#0f8f99"];
-  var N = 16, D = N * N, MAXC = 6;
-  var H_OPTS = [0, 8, 16, 32, 64, 128], LR_OPTS = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3];
+  var COLORS = ["#2a5bd7", "#e0782a", "#1d8a4a", "#9b3fb5"];
+  var N = 16, D = N * N, MAXC = 4, K = 3, THR = 0.7, EPOCHS = 80;
   var $ = function (id) { return document.getElementById(id); };
+  var classes = [], mode = "knn", net = null, netFor = -1, dataVer = 0, training = false;
+  var tests = [], lastVec = null;
 
-  var classes = [];          // {name, color, ex:[Float32Array]}
-  var mode = "knn";
-  var net = null;            // trained network
-  var dataVersion = 0, netVersion = -1;
-  var training = false, stopFlag = false, hist = [];
-  var tests = [];            // {t: classIndex, p: classIndex}
-  var lastVec = null, hasInk = false;
-
-  // ---------- drawing ----------
-  var pad = $("pad"), ctx = pad.getContext("2d"), sctx = $("see").getContext("2d");
+  // ---------- рисование ----------
+  var pad = $("pad"), ctx = pad.getContext("2d"), drawing = false, last = null;
   ctx.lineCap = "round"; ctx.lineJoin = "round";
-  var drawing = false, last = null;
-  function clearPad() { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, 300, 300); hasInk = false; lastVec = null; drawSee(null); refreshPrediction(); }
+  function clearPad() { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, 300, 300); lastVec = null; refresh(); }
   function pos(e) { var r = pad.getBoundingClientRect(); return { x: (e.clientX - r.left) * 300 / r.width, y: (e.clientY - r.top) * 300 / r.height }; }
-  pad.addEventListener("pointerdown", function (e) { e.preventDefault(); if (pad.setPointerCapture) pad.setPointerCapture(e.pointerId); drawing = true; last = pos(e); ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(last.x, last.y, 7, 0, 6.3); ctx.fill(); hasInk = true; });
+  pad.addEventListener("pointerdown", function (e) { e.preventDefault(); if (pad.setPointerCapture) pad.setPointerCapture(e.pointerId); drawing = true; last = pos(e); ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(last.x, last.y, 7, 0, 6.3); ctx.fill(); });
   pad.addEventListener("pointermove", function (e) { if (!drawing) return; e.preventDefault(); var p = pos(e); ctx.strokeStyle = "#111"; ctx.lineWidth = 14; ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; });
-  function endDraw() { if (!drawing) return; drawing = false; lastVec = vectorize(pad); drawSee(lastVec); refreshPrediction(); }
+  function endDraw() { if (!drawing) return; drawing = false; lastVec = vectorize(pad); refresh(); }
   pad.addEventListener("pointerup", endDraw); pad.addEventListener("pointercancel", endDraw);
 
-  // canvas -> Float32Array(256): crop to ink, fit square, downsample
   function vectorize(cv) {
-    var c = cv.getContext("2d"), w = cv.width, h = cv.height, d = c.getImageData(0, 0, w, h).data;
-    var x0 = w, y0 = h, x1 = -1, y1 = -1;
+    var c = cv.getContext("2d"), w = cv.width, h = cv.height, d = c.getImageData(0, 0, w, h).data, x0 = w, y0 = h, x1 = -1, y1 = -1;
     for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) if (d[(y * w + x) * 4] < 128) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
     if (x1 < 0) return null;
     var bw = x1 - x0 + 1, bh = y1 - y0 + 1, side = Math.max(bw, bh) * 1.15;
     var mid = document.createElement("canvas"); mid.width = 64; mid.height = 64;
-    var m = mid.getContext("2d"); m.fillStyle = "#fff"; m.fillRect(0, 0, 64, 64); m.imageSmoothingEnabled = true;
+    var m = mid.getContext("2d"); m.fillStyle = "#fff"; m.fillRect(0, 0, 64, 64);
     m.drawImage(cv, x0 + bw / 2 - side / 2, y0 + bh / 2 - side / 2, side, side, 0, 0, 64, 64);
     var md = m.getImageData(0, 0, 64, 64).data, v = new Float32Array(D);
-    for (var i = 0; i < N; i++) for (var j = 0; j < N; j++) {
-      var s = 0; for (var a = 0; a < 4; a++) for (var b = 0; b < 4; b++) s += md[((i * 4 + a) * 64 + j * 4 + b) * 4];
-      v[i * N + j] = Math.min(1, Math.max(0, 1 - s / 16 / 255));
-    }
+    for (var i = 0; i < N; i++) for (var j = 0; j < N; j++) { var s = 0; for (var a = 0; a < 4; a++) for (var b = 0; b < 4; b++) s += md[((i * 4 + a) * 64 + j * 4 + b) * 4]; v[i * N + j] = Math.min(1, Math.max(0, 1 - s / 16 / 255)); }
     return v;
   }
-  function paint16(c2, v) {
-    var img = c2.createImageData(N, N);
-    for (var i = 0; i < D; i++) { var g = v ? Math.round(255 * (1 - v[i])) : 255; img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = g; img.data[i * 4 + 3] = 255; }
-    c2.putImageData(img, 0, 0);
+  function thumb(v) {
+    var c = document.createElement("canvas"); c.width = N; c.height = N; var x = c.getContext("2d"), img = x.createImageData(N, N);
+    for (var i = 0; i < D; i++) { var g = Math.round(255 * (1 - v[i])); img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = g; img.data[i * 4 + 3] = 255; }
+    x.putImageData(img, 0, 0); return c;
   }
-  function drawSee(v) { paint16(sctx, v); }
-  function thumb(v) { var c = document.createElement("canvas"); c.width = N; c.height = N; paint16(c.getContext("2d"), v); return c; }
-  function heat(w, maxAbs) {
-    var c = document.createElement("canvas"); c.width = N; c.height = N;
-    var x = c.getContext("2d"), img = x.createImageData(N, N);
-    var P = [224, 120, 42], Q = [47, 111, 214];
-    for (var i = 0; i < D; i++) {
-      var t = Math.max(-1, Math.min(1, w[i] / (maxAbs || 1))), col = t >= 0 ? P : Q, a = Math.abs(t);
-      for (var k = 0; k < 3; k++) img.data[i * 4 + k] = Math.round(255 * (1 - a) + col[k] * a);
-      img.data[i * 4 + 3] = 255;
-    }
+  function heat(w, mx, color) {
+    var c = document.createElement("canvas"); c.width = N; c.height = N; var x = c.getContext("2d"), img = x.createImageData(N, N);
+    var r = parseInt(color.slice(1, 3), 16), g = parseInt(color.slice(3, 5), 16), b = parseInt(color.slice(5, 7), 16);
+    for (var i = 0; i < D; i++) { var a = Math.max(0, Math.min(1, w[i] / mx)); img.data[i * 4] = 255 * (1 - a) + r * a; img.data[i * 4 + 1] = 255 * (1 - a) + g * a; img.data[i * 4 + 2] = 255 * (1 - a) + b * a; img.data[i * 4 + 3] = 255; }
     x.putImageData(img, 0, 0); return c;
   }
 
-  // ---------- k nearest neighbours ----------
-  function unit(v) { var s = 0; for (var i = 0; i < D; i++) s += v[i] * v[i]; s = Math.sqrt(s) || 1; var u = new Float32Array(D); for (i = 0; i < D; i++) u[i] = v[i] / s; return u; }
+  // ---------- мозг 1: ищет похожее ----------
+  function unit(v) { var s = 0, i; for (i = 0; i < D; i++) s += v[i] * v[i]; s = Math.sqrt(s) || 1; var u = new Float32Array(D); for (i = 0; i < D; i++) u[i] = v[i] / s; return u; }
   function knn(v) {
     var u = unit(v), all = [];
-    classes.forEach(function (c, ci) { c.ex.forEach(function (e, ei) {
-      if (!e._u) e._u = unit(e);
-      var s = 0; for (var i = 0; i < D; i++) { var q = u[i] - e._u[i]; s += q * q; }
-      all.push({ ci: ci, ei: ei, d: Math.sqrt(s) });
-    }); });
-    if (!all.length) return null;
+    classes.forEach(function (c, ci) { c.ex.forEach(function (e, ei) { if (!e._u) e._u = unit(e); var s = 0; for (var i = 0; i < D; i++) { var q = u[i] - e._u[i]; s += q * q; } all.push({ ci: ci, ei: ei, d: s }); }); });
     all.sort(function (a, b) { return a.d - b.d; });
-    var k = Math.min(+$("kSl").value, all.length), votes = classes.map(function () { return 0; });
-    var nb = all.slice(0, k); nb.forEach(function (n) { votes[n.ci]++; });
+    var k = Math.min(K, all.length), votes = classes.map(function () { return 0; }), nb = all.slice(0, k);
+    nb.forEach(function (n) { votes[n.ci]++; });
     return { p: votes.map(function (x) { return x / k; }), nb: nb };
   }
 
-  // ---------- neural network (pure JS, Adam) ----------
-  function randn() { var u = 1 - Math.random(), v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
-  function makeNet(H, C) {
-    var L = [], dims = H ? [D, H, C] : [D, C];
-    for (var l = 0; l < dims.length - 1; l++) {
-      var a = dims[l], b = dims[l + 1], W = new Float32Array(a * b), sc = Math.sqrt(2 / a);
-      var k0 = !H ? 0 : (l === 0 ? 0.3 : 0.5); for (var i = 0; i < W.length; i++) W[i] = randn() * sc * k0;
-      L.push({ inp: a, out: b, W: W, b: new Float32Array(b), mW: new Float32Array(a * b), vW: new Float32Array(a * b), mb: new Float32Array(b), vb: new Float32Array(b), gW: new Float32Array(a * b), gb: new Float32Array(b) });
-    }
-    return { L: L, H: H, C: C, t: 0 };
-  }
-  function forward(nt, x) {
-    var acts = [x], h = x;
-    for (var l = 0; l < nt.L.length; l++) {
-      var Ly = nt.L[l], o = new Float32Array(Ly.out);
-      for (var j = 0; j < Ly.out; j++) { var s = Ly.b[j], off = j * Ly.inp; for (var i = 0; i < Ly.inp; i++) s += Ly.W[off + i] * h[i]; o[j] = s; }
-      if (l < nt.L.length - 1) for (j = 0; j < o.length; j++) o[j] = o[j] > 0 ? o[j] : 0;
-      acts.push(o); h = o;
-    }
-    var mx = -1e9; for (j = 0; j < h.length; j++) if (h[j] > mx) mx = h[j];
-    var p = new Float32Array(h.length), z = 0; for (j = 0; j < h.length; j++) { p[j] = Math.exp(h[j] - mx); z += p[j]; }
-    for (j = 0; j < h.length; j++) p[j] /= z;
-    return { p: p, acts: acts };
-  }
-  function backward(nt, f, y) {
-    var g = new Float32Array(f.p); g[y] -= 1;
-    for (var l = nt.L.length - 1; l >= 0; l--) {
-      var Ly = nt.L[l], inp = f.acts[l], gi = new Float32Array(Ly.inp);
-      for (var j = 0; j < Ly.out; j++) { var gj = g[j]; if (!gj) continue; Ly.gb[j] += gj; var off = j * Ly.inp;
-        for (var i = 0; i < Ly.inp; i++) { Ly.gW[off + i] += gj * inp[i]; gi[i] += gj * Ly.W[off + i]; } }
-      if (l > 0) { for (i = 0; i < gi.length; i++) if (inp[i] <= 0) gi[i] = 0; g = gi; }
-    }
-    return -Math.log(Math.max(1e-9, f.p[y]));
-  }
-  function adam(nt, lr, bs) {
-    nt.t++; var b1 = 0.9, b2 = 0.999, c1 = 1 - Math.pow(b1, nt.t), c2 = 1 - Math.pow(b2, nt.t);
-    nt.L.forEach(function (Ly) {
-      [["W", "gW", "mW", "vW"], ["b", "gb", "mb", "vb"]].forEach(function (k) {
-        var P = Ly[k[0]], G = Ly[k[1]], M = Ly[k[2]], V = Ly[k[3]];
-        for (var i = 0; i < P.length; i++) { var gg = G[i] / bs + (k[0] === "W" ? 1e-3 * P[i] : 0);
-          M[i] = b1 * M[i] + (1 - b1) * gg; V[i] = b2 * V[i] + (1 - b2) * gg * gg;
-          P[i] -= lr * (M[i] / c1) / (Math.sqrt(V[i] / c2) + 1e-8); G[i] = 0; }
-      });
-    });
-  }
-  function shift(v) {
-    var dx = Math.round(Math.random() * 2 - 1), dy = Math.round(Math.random() * 2 - 1), o = new Float32Array(D);
-    for (var i = 0; i < N; i++) for (var j = 0; j < N; j++) { var si = i - dy, sj = j - dx; if (si >= 0 && si < N && sj >= 0 && sj < N) o[i * N + j] = v[si * N + sj]; }
-    return o;
-  }
-  function accuracy(nt, set) { if (!set.length) return null; var ok = 0; set.forEach(function (s) { var p = forward(nt, s.x).p, bi = 0; for (var j = 1; j < p.length; j++) if (p[j] > p[bi]) bi = j; if (bi === s.y) ok++; }); return ok / set.length; }
-
-  function train() {
-    var C = classes.length, all = [];
-    classes.forEach(function (c, ci) { c.ex.forEach(function (e) { all.push({ x: e, y: ci }); }); });
-    if (classes.some(function (c) { return !c.ex.length; })) { toast("В каждом классе нужен хотя бы один пример"); return; }
-    for (var i = all.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = all[i]; all[i] = all[j]; all[j] = t; }
-    var trainSet = all, valSet = [];
-    if ($("val").checked) {
-      var byC = classes.map(function () { return []; }); all.forEach(function (s) { byC[s.y].push(s); });
-      if (byC.every(function (a) { return a.length >= 3; })) {
-        trainSet = []; byC.forEach(function (a) { var nv = Math.max(1, Math.round(a.length * 0.2)); valSet = valSet.concat(a.slice(0, nv)); trainSet = trainSet.concat(a.slice(nv)); });
-      } else toast("Для проверки нужно хотя бы 3 примера в каждом классе — учимся на всех");
-    }
-    var H = H_OPTS[+$("hSl").value], lr = LR_OPTS[+$("lrSl").value], epochs = +$("epSl").value, aug = $("aug").checked;
-    var nt = makeNet(H, C), ep = 0, bs = 16, ver = dataVersion;
-    hist = []; training = true; stopFlag = false; setTrainUI();
+  // ---------- мозг 2: нейросеть (один слой, softmax) ----------
+  function trainNet() {
+    if (classes.some(function (c) { return c.ex.length < 2; })) { toast("Нужно хотя бы по 2 примера в каждом классе"); return; }
+    var C = classes.length, data = [];
+    classes.forEach(function (c, ci) { c.ex.forEach(function (e) { data.push({ x: e, y: ci }); }); });
+    var W = new Float32Array(C * D), b = new Float32Array(C), ep = 0, lr = 0.5, ver = dataVer;
+    training = true; $("train").disabled = true; $("prog").hidden = false;
+    function probs(x) { var z = [], mx = -1e9, s = 0, j, i; for (j = 0; j < C; j++) { var t = b[j], o = j * D; for (i = 0; i < D; i++) t += W[o + i] * x[i]; z.push(t); if (t > mx) mx = t; } for (j = 0; j < C; j++) { z[j] = Math.exp(z[j] - mx); s += z[j]; } return z.map(function (q) { return q / s; }); }
     function step() {
-      if (stopFlag || ep >= epochs) { finish(); return; }
-      var t0 = performance.now();
-      while (ep < epochs && performance.now() - t0 < 30) {
-        var order = trainSet.slice(); for (var i = order.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = order[i]; order[i] = order[j]; order[j] = t; }
-        var loss = 0;
-        for (var s = 0; s < order.length; s += bs) {
-          var batch = order.slice(s, s + bs);
-          batch.forEach(function (it) { var x = aug ? shift(it.x) : it.x; loss += backward(nt, forward(nt, x), it.y); });
-          adam(nt, lr, batch.length);
-        }
-        ep++;
-        hist.push({ loss: loss / order.length, tr: accuracy(nt, trainSet), va: accuracy(nt, valSet) });
+      for (var r = 0; r < 4 && ep < EPOCHS; r++, ep++) {
+        for (var n = data.length - 1; n > 0; n--) { var m = Math.floor(Math.random() * (n + 1)), t = data[n]; data[n] = data[m]; data[m] = t; }
+        data.forEach(function (it) { var p = probs(it.x); for (var j = 0; j < C; j++) { var g = (p[j] - (j === it.y ? 1 : 0)) * lr / 10, o = j * D; b[j] -= g; for (var i = 0; i < D; i++) W[o + i] -= g * it.x[i] + 0.0005 * W[o + i]; } });
       }
-      net = nt; netVersion = ver; drawChart(epochs); netStatus(ep, epochs, trainSet.length, valSet.length);
-      refreshPrediction();
-      requestAnimationFrame(step);
+      net = { W: W, b: b, C: C, probs: probs }; netFor = ver;
+      var ok = 0; data.forEach(function (it) { var p = probs(it.x), bi = 0; for (var j = 1; j < C; j++) if (p[j] > p[bi]) bi = j; if (bi === it.y) ok++; });
+      $("prog").firstChild.style.width = Math.round(ep / EPOCHS * 100) + "%";
+      var st = $("netStatus"); st.classList.remove("stale");
+      st.textContent = ep < EPOCHS ? "Учится… просмотрела все примеры " + ep + " раз" : "Готово! Нейросеть просмотрела все " + data.length + " примеров " + EPOCHS + " раз и правильно узнаёт " + Math.round(ok / data.length * 100) + "% из них.";
+      refresh();
+      if (ep < EPOCHS) requestAnimationFrame(step); else { training = false; $("train").disabled = false; setTimeout(function () { $("prog").hidden = true; }, 600); }
     }
-    function finish() { training = false; setTrainUI(); net = nt; netVersion = ver; netStatus(ep, epochs, trainSet.length, valSet.length, true); refreshPrediction(); }
     requestAnimationFrame(step);
   }
-  function netStatus(ep, epochs, nTr, nVa, done) {
-    var h = hist[hist.length - 1], el = $("netStatus"); el.classList.remove("stale");
-    var s = (done ? "Обучено: " : "Обучение: ") + "эпоха " + ep + " из " + epochs + " · ошибка " + h.loss.toFixed(3) +
-      " · на обучающих " + Math.round(h.tr * 100) + "%";
-    if (h.va !== null) s += " · на отложенных " + Math.round(h.va * 100) + "%";
-    s += " (" + nTr + (nVa ? " + " + nVa : "") + " примеров)";
-    if (done && h.va !== null && h.tr - h.va > 0.2) s += ". Большой разрыв — похоже на переобучение.";
-    el.textContent = s;
-  }
-  function setTrainUI() { $("train").disabled = training; $("stop").disabled = !training; }
-  function markStale() {
-    dataVersion++;
-    if (net && netVersion !== dataVersion && mode === "net") {
-      var el = $("netStatus");
-      if (!net || net.C !== classes.length) { net = null; el.textContent = "Классы изменились — обучите нейросеть заново."; }
-      else el.textContent = "Данные изменились после обучения — нажмите «Обучить» ещё раз.";
-      el.classList.add("stale");
-    } else if (net && net.C !== classes.length) net = null;
+  function netReady() { return net && net.C === classes.length; }
+  function changed() {
+    dataVer++;
+    if (net && net.C !== classes.length) net = null;
+    if (mode === "net" && (net || netFor >= 0)) { var st = $("netStatus"); st.textContent = "Примеры изменились — нажми «Обучить» ещё раз."; st.classList.add("stale"); }
   }
 
-  // ---------- chart ----------
-  function drawChart(epochs) {
-    var cv = $("chart"), c = cv.getContext("2d"), W = cv.width, Hh = cv.height, L = 64, R = 14, T = 14, B = 34;
-    var cs = getComputedStyle(document.documentElement);
-    c.clearRect(0, 0, W, Hh); c.font = "17px system-ui, sans-serif"; c.fillStyle = cs.getPropertyValue("--mute"); c.strokeStyle = cs.getPropertyValue("--line"); c.lineWidth = 1;
-    [0, 0.5, 1].forEach(function (v) { var y = T + (1 - v) * (Hh - T - B); c.beginPath(); c.moveTo(L, y); c.lineTo(W - R, y); c.stroke(); c.textAlign = "right"; c.fillText(Math.round(v * 100) + "%", L - 8, y + 6); });
-    c.textAlign = "left"; c.fillText("0", L, Hh - 8); c.textAlign = "right"; c.fillText("эпоха " + epochs, W - R, Hh - 8);
-    function line(key, color, dash) {
-      c.strokeStyle = color; c.lineWidth = 3; c.setLineDash(dash || []); c.beginPath(); var any = false;
-      hist.forEach(function (h, i) { if (h[key] === null) return; var x = L + (i + 1) / epochs * (W - L - R), y = T + (1 - h[key]) * (Hh - T - B); if (!any) { c.moveTo(x, y); any = true; } else c.lineTo(x, y); });
-      c.stroke();
-    }
-    line("va", cs.getPropertyValue("--pos")); line("tr", cs.getPropertyValue("--acc"), [10, 7]); c.setLineDash([]);
-  }
-
-  // ---------- prediction ----------
+  // ---------- ответ ----------
   function predict(v) {
     if (!v) return null;
-    if (mode === "knn") { if (classes.filter(function (c) { return c.ex.length; }).length < 2) return null; var r = knn(v); return r ? { p: r.p, nb: r.nb } : null; }
-    if (!net || net.C !== classes.length) return null;
-    var f = forward(net, v); return { p: Array.prototype.slice.call(f.p), acts: f.acts };
+    if (mode === "knn") return classes.filter(function (c) { return c.ex.length; }).length >= 2 ? knn(v) : null;
+    return netReady() ? { p: net.probs(v) } : null;
   }
-  function refreshPrediction() {
-    var r = predict(lastVec), bars = $("bars"), thr = +$("thrSl").value / 100;
-    bars.innerHTML = "";
+  function best(r) { var bi = 0; r.p.forEach(function (x, i) { if (x > r.p[bi]) bi = i; }); return ($("unsure").checked && r.p[bi] < THR) ? -1 : bi; }
+  function refresh() {
+    var r = predict(lastVec), bars = $("bars"), vd = $("verdict"); bars.innerHTML = "";
     classes.forEach(function (c, i) {
       var pct = r ? Math.round(r.p[i] * 100) : 0, el = document.createElement("div"); el.className = "bar";
-      el.innerHTML = '<div class="bar-l"><span></span><b></b></div><div class="bar-t"><div class="bar-f"></div>' + (thr > 0 ? '<div class="thr"></div>' : "") + "</div>";
+      el.innerHTML = '<div class="bar-l"><span></span><b></b></div><div class="bar-t"><div class="bar-f"></div></div>';
       el.querySelector("span").textContent = c.name; el.querySelector("b").textContent = r ? pct + "%" : "";
-      var f = el.querySelector(".bar-f"); f.style.background = c.color; f.style.width = pct + "%";
-      if (thr > 0) el.querySelector(".thr").style.left = (thr * 100) + "%";
-      bars.appendChild(el);
+      var f = el.querySelector(".bar-f"); f.style.background = c.color; f.style.width = pct + "%"; bars.appendChild(el);
     });
-    var vd = $("verdict");
-    if (r) {
-      var bi = 0; r.p.forEach(function (x, i) { if (x > r.p[bi]) bi = i; });
-      if (r.p[bi] < thr) { vd.textContent = "Не уверена"; vd.style.color = "var(--warn)"; }
-      else { vd.textContent = "Это " + classes[bi].name; vd.style.color = classes[bi].color; }
-    } else { vd.textContent = "—"; vd.style.color = ""; }
+    if (r) { var bi = best(r); if (bi < 0) { vd.textContent = "Не знаю"; vd.style.color = "var(--warn)"; } else { vd.textContent = "Это " + classes[bi].name + "!"; vd.style.color = classes[bi].color; } }
+    else { vd.textContent = "—"; vd.style.color = ""; }
     renderWhy(r);
   }
   function renderWhy(r) {
-    var box = $("why"), hint = $("whyHint"), sc = $("whyScale"); box.innerHTML = ""; sc.hidden = true;
+    var box = $("why"), hint = $("whyHint"); box.innerHTML = "";
     if (mode === "knn") {
-      $("whyTitle").textContent = "Почему: ближайшие примеры";
-      if (!r) { hint.textContent = "Добавьте примеры хотя бы в два класса и нарисуйте что-нибудь — здесь появятся самые похожие примеры из данных."; return; }
-      r.nb.forEach(function (n) {
-        var fg = document.createElement("figure"), cv = thumb(classes[n.ci].ex[n.ei]); cv.style.borderColor = classes[n.ci].color;
-        fg.appendChild(cv); var cap = document.createElement("figcaption"); cap.textContent = classes[n.ci].name + " · " + n.d.toFixed(2); fg.appendChild(cap); box.appendChild(fg);
-      });
-      hint.textContent = "Под каждой картинкой — расстояние: чем меньше, тем похожее. Попробуйте k = 1: машина станет уверена на 100% всегда, даже когда ошибается.";
+      $("whyTitle").textContent = "Самые похожие примеры";
+      if (!r) { hint.textContent = "Добавь примеры в два класса и нарисуй что-нибудь новое — здесь появятся 3 самых похожих рисунка из твоих примеров. Машина смотрит, каких среди них больше."; return; }
+      r.nb.forEach(function (n) { var fg = document.createElement("figure"), cv = thumb(classes[n.ci].ex[n.ei]); cv.style.borderColor = classes[n.ci].color; fg.appendChild(cv); var cap = document.createElement("figcaption"); cap.textContent = classes[n.ci].name; fg.appendChild(cap); box.appendChild(fg); });
+      hint.textContent = "Машина нашла эти 3 рисунка самыми похожими на твой и проголосовала: каких больше — тот и ответ.";
       return;
     }
-    if (!net || net.C !== classes.length) { $("whyTitle").textContent = "Почему: что ищет нейросеть"; hint.textContent = "Обучите нейросеть — здесь появятся карты того, на какие клетки она смотрит."; return; }
-    var L0 = net.L[0], count = net.H ? Math.min(net.H, 8) : net.C, maps = [];
-    for (var j = 0; j < count; j++) maps.push(L0.W.subarray(j * D, (j + 1) * D));
-    var mx = 0; maps.forEach(function (w) { for (var i = 0; i < D; i++) mx = Math.max(mx, Math.abs(w[i])); });
-    var acts = r ? r.acts[1] : null;
-    maps.forEach(function (w, j) {
-      var fg = document.createElement("figure"), cv = heat(w, mx * 0.8); fg.appendChild(cv);
-      var cap = document.createElement("figcaption");
-      if (net.H) { cap.textContent = "нейрон " + (j + 1) + (acts ? " · " + acts[j].toFixed(1) : ""); if (acts) cv.style.borderColor = acts[j] >= 0.05 ? "var(--pos)" : "var(--line)"; }
-      else { cap.textContent = classes[j].name; cv.style.borderColor = classes[j].color; }
-      fg.appendChild(cap); box.appendChild(fg);
-    });
-    sc.hidden = false;
-    $("whyTitle").textContent = net.H ? "Почему: что ищут скрытые нейроны" : "Почему: что ищет каждый класс";
-    hint.textContent = net.H ? "Веса первых " + count + " скрытых нейронов. Оранжевое — клетка «за», синее — «против». Число — насколько нейрон сейчас возбуждён (0 — молчит)."
-      : "Веса без скрытого слоя: оранжевые клетки голосуют за класс, синие — против. Видно, какой «шаблон» выучила модель.";
+    $("whyTitle").textContent = "Что запомнила нейросеть";
+    if (!netReady()) { hint.textContent = "После обучения здесь появится «шаблон» для каждого класса: клетки, которые нейросеть считает важными."; return; }
+    var mx = 0; for (var i = 0; i < net.W.length; i++) mx = Math.max(mx, net.W[i]);
+    classes.forEach(function (c, j) { var fg = document.createElement("figure"), cv = heat(net.W.subarray(j * D, (j + 1) * D), mx * 0.8, c.color); cv.style.borderColor = c.color; fg.appendChild(cv); var cap = document.createElement("figcaption"); cap.textContent = c.name; fg.appendChild(cap); box.appendChild(fg); });
+    hint.textContent = "Цветные клетки — где нейросеть ожидает линии для этого класса. Если рисунок попадает в цветные клетки — голос за класс.";
   }
 
-  // ---------- data UI ----------
+  // ---------- интерфейс ----------
   function plural(n) { var a = n % 10, b = n % 100; if (a === 1 && b !== 11) return "пример"; if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return "примера"; return "примеров"; }
   function newClass(name) { var used = classes.map(function (c) { return c.color; }); classes.push({ name: name, color: COLORS.filter(function (c) { return used.indexOf(c) < 0; })[0], ex: [] }); }
-  function renderAll() { renderClasses(); renderButtons(); renderTest(); refreshPrediction(); save(); }
+  function renderAll() { renderClasses(); renderButtons(); renderTest(); refresh(); save(); }
   function renderClasses() {
     var box = $("classes"); box.innerHTML = "";
     classes.forEach(function (c, i) {
       var el = document.createElement("div"); el.className = "cls";
-      el.innerHTML = '<div class="cls-top"><span class="dot"></span><input maxlength="18" aria-label="Имя класса"><span class="count"></span><button class="x" title="Удалить класс">×</button></div><div class="thumbs"></div>';
+      el.innerHTML = '<div class="cls-top"><span class="dot"></span><input maxlength="16" aria-label="Имя класса"><span class="count"></span><button class="x" title="Удалить класс">×</button></div><div class="thumbs"></div>';
       el.querySelector(".dot").style.background = c.color;
       var inp = el.querySelector("input"); inp.value = c.name;
-      inp.addEventListener("input", function () { c.name = inp.value.trim() || ("Класс " + (i + 1)); renderButtons(); renderTest(); refreshPrediction(); save(); });
+      inp.addEventListener("input", function () { c.name = inp.value.trim() || ("Класс " + (i + 1)); renderButtons(); renderTest(); refresh(); save(); });
       el.querySelector(".count").textContent = c.ex.length + " " + plural(c.ex.length);
       var del = el.querySelector(".x"); del.disabled = classes.length <= 2;
-      del.addEventListener("click", function () { classes.splice(i, 1); tests = []; markStale(); renderAll(); });
+      del.addEventListener("click", function () { classes.splice(i, 1); tests = []; changed(); renderAll(); });
       var th = el.querySelector(".thumbs");
-      c.ex.forEach(function (e, j) { var t = thumb(e); t.title = "Удалить этот пример"; t.addEventListener("click", function () { c.ex.splice(j, 1); markStale(); renderAll(); }); th.appendChild(t); });
+      c.ex.forEach(function (e, j) { var t = thumb(e); t.title = "Удалить этот пример"; t.addEventListener("click", function () { c.ex.splice(j, 1); changed(); renderAll(); }); th.appendChild(t); });
       box.appendChild(el);
     });
     $("addClass").disabled = classes.length >= MAXC;
@@ -461,118 +284,89 @@ button.primary:hover { filter:brightness(1.08); background:var(--acc); }
     var row = $("addRow"), tr = $("truthRow"); row.innerHTML = ""; tr.innerHTML = "";
     classes.forEach(function (c, i) {
       var b = document.createElement("button"); b.className = "addbtn"; b.style.background = c.color; b.textContent = c.name;
-      b.addEventListener("click", function () {
-        if (!hasInk || !lastVec) { toast("Сначала нарисуйте пример"); return; }
-        c.ex.push(lastVec); markStale(); clearPad(); renderAll();
-      }); row.appendChild(b);
-      var t = document.createElement("button"); t.textContent = "Я рисовал: " + c.name; t.style.borderColor = c.color;
+      b.addEventListener("click", function () { if (!lastVec) { toast("Сначала нарисуй"); return; } c.ex.push(lastVec); changed(); clearPad(); renderAll(); });
+      row.appendChild(b);
+      var t = document.createElement("button"); t.textContent = "Я рисовал: " + c.name; t.style.borderColor = c.color; t.style.borderWidth = "2px";
       t.addEventListener("click", function () {
-        var r = predict(lastVec);
-        if (!hasInk || !lastVec) { toast("Сначала нарисуйте рисунок для проверки"); return; }
-        if (!r) { toast(mode === "net" ? "Сначала обучите нейросеть" : "Нужны примеры хотя бы в двух классах"); return; }
-        var bi = 0; r.p.forEach(function (x, k) { if (x > r.p[bi]) bi = k; });
-        var thr = +$("thrSl").value / 100;
-        tests.push({ t: i, p: r.p[bi] < thr ? -1 : bi }); clearPad(); renderTest();
-      }); tr.appendChild(t);
+        if (!lastVec) { toast("Сначала нарисуй новый рисунок"); return; }
+        var r = predict(lastVec); if (!r) { toast(mode === "net" ? "Сначала обучи нейросеть" : "Нужны примеры хотя бы в двух классах"); return; }
+        tests.push({ t: i, p: best(r) }); clearPad(); renderTest();
+      });
+      tr.appendChild(t);
     });
   }
   function renderTest() {
-    var C = classes.length, M = [], unsure = [], ok = 0, n = 0;
-    for (var i = 0; i < C; i++) { M.push(new Array(C).fill(0)); unsure.push(0); }
-    tests.forEach(function (t) { if (t.t >= C || t.p >= C) return; n++; if (t.p === -1) unsure[t.t]++; else { M[t.t][t.p]++; if (t.p === t.t) ok++; } });
-    $("acc").textContent = n ? Math.round(ok / n * 100) + "%" : "—";
-    $("accN").textContent = n ? "(" + ok + " из " + n + ")" : "";
-    var anyUnsure = unsure.some(function (x) { return x; });
-    var h = '<tr><th></th>' + classes.map(function (c) { return '<th style="color:' + c.color + '">' + esc(c.name) + "</th>"; }).join("") + (anyUnsure ? "<th>не уверена</th>" : "") + "</tr>";
-    for (i = 0; i < C; i++) {
-      h += '<tr><th style="color:' + classes[i].color + '">' + esc(classes[i].name) + "</th>";
-      for (var j = 0; j < C; j++) { var v = M[i][j]; h += '<td class="' + (i === j ? "diag" : v ? "off" : "zero") + '">' + v + "</td>"; }
-      if (anyUnsure) h += '<td class="' + (unsure[i] ? "" : "zero") + '">' + unsure[i] + "</td>";
-      h += "</tr>";
-    }
-    $("mx").innerHTML = h;
+    var ok = 0, n = 0, errs = {};
+    tests.forEach(function (t) { if (t.t >= classes.length || t.p >= classes.length) return; n++; if (t.p === t.t) ok++; else { var k = t.t + ":" + t.p; errs[k] = (errs[k] || 0) + 1; } });
+    $("score").textContent = ok + " из " + n;
+    var ul = $("mist"); ul.innerHTML = "";
+    Object.keys(errs).forEach(function (k) {
+      var a = +k.split(":")[0], b = +k.split(":")[1], li = document.createElement("li");
+      li.textContent = "рисовал «" + classes[a].name + "», а она сказала " + (b < 0 ? "«не знаю»" : "«" + classes[b].name + "»") + " — " + errs[k] + " раз" + ([2, 3, 4].indexOf(errs[k] % 10) >= 0 && (errs[k] % 100 < 12 || errs[k] % 100 > 14) ? "а" : "");
+      ul.appendChild(li);
+    });
+    $("mistBox").hidden = !Object.keys(errs).length;
   }
-  function esc(s) { return s.replace(/[&<>"]/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]; }); }
+  function setMode(m) { mode = m; $("mKnn").setAttribute("aria-pressed", m === "knn"); $("mNet").setAttribute("aria-pressed", m === "net"); $("netBox").hidden = m !== "net"; refresh(); }
 
-  // ---------- demo data ----------
-  function demoSet() {
-    var cv = document.createElement("canvas"); cv.width = 300; cv.height = 300; var c = cv.getContext("2d");
-    c.lineCap = "round"; c.lineJoin = "round"; c.strokeStyle = "#111";
+  // ---------- готовые примеры ----------
+  function demo() {
+    var cv = document.createElement("canvas"); cv.width = 300; cv.height = 300; var c = cv.getContext("2d"); c.lineCap = "round"; c.lineJoin = "round"; c.strokeStyle = "#111";
     function J(a) { return (Math.random() * 2 - 1) * a; }
-    function shape(kind) {
+    function shape(k) {
       c.fillStyle = "#fff"; c.fillRect(0, 0, 300, 300); c.lineWidth = 10 + Math.random() * 8;
       var cx = 150 + J(40), cy = 150 + J(40), r = 45 + Math.random() * 60; c.beginPath();
-      if (kind === 0) { var st = Math.random() * 6.28; for (var t = 0; t <= 22; t++) { var a = st + t / 20 * 6.28, rr = r * (0.9 + Math.random() * 0.15); c.lineTo(cx + rr * Math.cos(a) * (0.85 + J(0.1)), cy + rr * Math.sin(a)); } }
-      else if (kind === 1) { c.moveTo(cx - r + J(10), cy - r + J(10)); c.lineTo(cx + r + J(10), cy + r + J(10)); c.moveTo(cx + r + J(10), cy - r + J(10)); c.lineTo(cx - r + J(10), cy + r + J(10)); }
+      if (k === 0) { var st = Math.random() * 6.28; for (var t = 0; t <= 22; t++) { var a = st + t / 20 * 6.28, rr = r * (0.9 + Math.random() * 0.15); c.lineTo(cx + rr * Math.cos(a) * (0.85 + J(0.1)), cy + rr * Math.sin(a)); } }
+      else if (k === 1) { c.moveTo(cx - r + J(10), cy - r + J(10)); c.lineTo(cx + r + J(10), cy + r + J(10)); c.moveTo(cx + r + J(10), cy - r + J(10)); c.lineTo(cx - r + J(10), cy + r + J(10)); }
       else { c.moveTo(cx + J(12), cy - r + J(8)); c.lineTo(cx + r + J(12), cy + r * 0.8 + J(8)); c.lineTo(cx - r + J(12), cy + r * 0.8 + J(8)); c.closePath(); }
       c.stroke(); return vectorize(cv);
     }
-    classes = []; newClass("Круг"); newClass("Крестик"); newClass("Треугольник");
-    for (var k = 0; k < 3; k++) for (var i = 0; i < 12; i++) classes[k].ex.push(shape(k));
-    tests = []; net = null; markStale(); renderAll(); toast("Загружено 36 примеров: круг, крестик, треугольник");
+    classes = []; ["Круг", "Крестик", "Треугольник"].forEach(newClass);
+    for (var k = 0; k < 3; k++) for (var i = 0; i < 10; i++) classes[k].ex.push(shape(k));
+    tests = []; net = null; netFor = -1; changed(); $("netStatus").textContent = "Нарисуй примеры и нажми «Обучить»."; $("netStatus").classList.remove("stale");
+    renderAll(); toast("Добавлено по 10 примеров круга, крестика и треугольника");
   }
 
-  // ---------- save / load ----------
+  // ---------- файлы и память ----------
   function serialize() { return { app: "laboratoria-ii", v: 1, classes: classes.map(function (c) { return { name: c.name, ex: c.ex.map(function (e) { return Array.prototype.map.call(e, function (x) { return Math.round(x * 100) / 100; }); }) }; }) }; }
   function load(obj, merge) {
     if (!obj || !Array.isArray(obj.classes)) throw new Error("bad");
     if (!merge) classes = [];
     obj.classes.forEach(function (oc) {
-      var name = String(oc.name || "Класс").slice(0, 18), ex = (oc.ex || []).filter(function (e) { return e && e.length === D; }).map(function (e) { return Float32Array.from(e, function (x) { return Math.max(0, Math.min(1, +x || 0)); }); });
+      var name = String(oc.name || "Класс").slice(0, 16), ex = (oc.ex || []).filter(function (e) { return e && e.length === D; }).map(function (e) { return Float32Array.from(e, function (x) { return Math.max(0, Math.min(1, +x || 0)); }); });
       var t = classes.filter(function (c) { return c.name.toLowerCase() === name.toLowerCase(); })[0];
       if (t) t.ex = t.ex.concat(ex); else if (classes.length < MAXC) { newClass(name); classes[classes.length - 1].ex = ex; }
     });
     while (classes.length < 2) newClass("Класс " + (classes.length + 1));
   }
-  function save() { try { localStorage.setItem("laboratoria-ii", JSON.stringify(serialize())); } catch (e) {} }
-  $("exportBtn").addEventListener("click", function () {
-    var blob = new Blob([JSON.stringify(serialize())], { type: "application/json" }), a = document.createElement("a");
-    a.href = URL.createObjectURL(blob); a.download = "dannye-ii.json"; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
-  });
+  function save() { try { localStorage.setItem("laboratoria-ii-2", JSON.stringify(serialize())); } catch (e) {} }
+  $("exportBtn").addEventListener("click", function () { var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(serialize())], { type: "application/json" })); a.download = "risunki-ii.json"; document.body.appendChild(a); a.click(); a.remove(); });
   $("importBtn").addEventListener("click", function () { $("importFile").click(); });
   $("importFile").addEventListener("change", function () {
     var f = this.files[0]; if (!f) return; var rd = new FileReader();
-    rd.onload = function () {
-      try { var merge = classes.some(function (c) { return c.ex.length; }); load(JSON.parse(rd.result), merge); tests = []; net = null; markStale(); renderAll();
-        toast(merge ? "Добавлено к текущим данным (классы с одинаковыми именами объединены)" : "Данные загружены"); }
-      catch (e) { toast("Не получилось прочитать файл: это не файл Лаборатории ИИ"); }
-    };
+    rd.onload = function () { try { var merge = classes.some(function (c) { return c.ex.length; }); load(JSON.parse(rd.result), merge); tests = []; net = null; changed(); renderAll(); toast(merge ? "Рисунки добавлены к твоим" : "Рисунки загружены"); } catch (e) { toast("Это не файл с рисунками Лаборатории ИИ"); } };
     rd.readAsText(f); this.value = "";
   });
 
-  // ---------- controls ----------
-  function setMode(m) {
-    mode = m; $("mKnn").setAttribute("aria-pressed", m === "knn"); $("mNet").setAttribute("aria-pressed", m === "net");
-    $("knnBox").hidden = m !== "knn"; $("netBox").hidden = m !== "net"; refreshPrediction();
-  }
   $("mKnn").addEventListener("click", function () { setMode("knn"); });
-  $("mNet").addEventListener("click", function () { setMode("net"); if (hist.length) drawChart(+$("epSl").value); else drawChart(+$("epSl").value); });
-  $("kSl").addEventListener("input", function () { $("kOut").textContent = this.value; refreshPrediction(); });
-  $("hSl").addEventListener("input", function () { $("hOut").textContent = H_OPTS[+this.value] || "0 (без скрытого слоя)"; });
-  $("lrSl").addEventListener("input", function () { $("lrOut").textContent = LR_OPTS[+this.value].toFixed(3); });
-  $("epSl").addEventListener("input", function () { $("epOut").textContent = this.value; });
-  $("thrSl").addEventListener("input", function () { $("thrOut").textContent = +this.value ? this.value + "%" : "выкл."; refreshPrediction(); });
-  $("train").addEventListener("click", train);
-  $("stop").addEventListener("click", function () { stopFlag = true; });
+  $("mNet").addEventListener("click", function () { setMode("net"); });
+  $("train").addEventListener("click", trainNet);
+  $("unsure").addEventListener("change", refresh);
   $("clear").addEventListener("click", clearPad);
-  $("addClass").addEventListener("click", function () { if (classes.length < MAXC) { newClass("Класс " + (classes.length + 1)); markStale(); renderAll(); } });
-  $("demo").addEventListener("click", demoSet);
+  $("demo").addEventListener("click", demo);
+  $("addClass").addEventListener("click", function () { if (classes.length < MAXC) { newClass("Класс " + (classes.length + 1)); changed(); renderAll(); } });
   $("resetTest").addEventListener("click", function () { tests = []; renderTest(); });
   var armed = false;
   $("resetAll").addEventListener("click", function () {
-    var b = this;
-    if (!armed) { armed = true; b.textContent = "Точно? Ещё раз"; setTimeout(function () { armed = false; b.textContent = "Сбросить всё"; }, 2500); return; }
-    armed = false; b.textContent = "Сбросить всё"; classes = []; newClass("Круг"); newClass("Крестик"); tests = []; net = null; hist = [];
-    $("netStatus").textContent = "Нейросеть ещё не обучена."; markStale(); clearPad(); renderAll(); drawChart(+$("epSl").value);
+    var b = this; if (!armed) { armed = true; b.textContent = "Точно? Нажми ещё раз"; setTimeout(function () { armed = false; b.textContent = "Начать заново"; }, 2500); return; }
+    armed = false; b.textContent = "Начать заново"; classes = []; newClass("Круг"); newClass("Крестик"); tests = []; net = null; netFor = -1;
+    $("netStatus").textContent = "Нарисуй примеры и нажми «Обучить»."; $("netStatus").classList.remove("stale"); clearPad(); renderAll();
   });
   var tt; function toast(s) { var t = $("toast"); t.textContent = s; t.classList.add("on"); clearTimeout(tt); tt = setTimeout(function () { t.classList.remove("on"); }, 2600); }
 
-  // ---------- start ----------
-  try { var saved = JSON.parse(localStorage.getItem("laboratoria-ii")); if (saved) load(saved, false); } catch (e) {}
+  try { var saved = JSON.parse(localStorage.getItem("laboratoria-ii-2")); if (saved) load(saved, false); } catch (e) {}
   if (!classes.length) { newClass("Круг"); newClass("Крестик"); }
-  clearPad(); renderAll(); drawChart(60);
-  window.__lab = { classes: function () { return classes; }, predict: function (v) { return predict(v); }, vectorize: vectorize };
+  clearPad(); renderAll();
 })();
 </script>
 </body>
