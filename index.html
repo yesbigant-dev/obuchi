@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Обучи свой ИИ</title>
+<style>
+:root { --bg:#f4f4f1; --card:#fff; --ink:#1b1b1b; --mute:#6b6b6b; --line:#d9d9d4; --acc:#2a5bd7; --ok:#1f8a4c; --bad:#c23b2a; }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.4 "Segoe UI", Arial, sans-serif; }
+header { padding:12px 20px; background:#1b1b1b; color:#fff; display:flex; align-items:baseline; gap:16px; flex-wrap:wrap; }
+header h1 { margin:0; font-size:20px; }
+header span { color:#bbb; font-size:13px; }
+main { display:grid; grid-template-columns: minmax(260px,1fr) auto minmax(260px,1fr); gap:16px; padding:16px 20px; align-items:start; max-width:1300px; margin:0 auto; }
+@media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+.card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; }
+h2 { font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--mute); margin:0 0 10px; }
+.cls { border:1px solid var(--line); border-radius:8px; padding:8px 10px; margin-bottom:10px; }
+.cls-top { display:flex; align-items:center; gap:8px; }
+.dot { width:14px; height:14px; border-radius:50%; flex:none; }
+.cls input { flex:1; min-width:0; font:inherit; font-weight:600; border:1px solid transparent; border-radius:5px; padding:3px 5px; }
+.cls input:hover, .cls input:focus { border-color:var(--line); outline:none; }
+.count { font-size:13px; color:var(--mute); white-space:nowrap; }
+.thumbs { display:flex; flex-wrap:wrap; gap:3px; margin-top:6px; min-height:4px; }
+.thumbs canvas { width:30px; height:30px; border:1px solid var(--line); border-radius:3px; image-rendering:pixelated; cursor:pointer; }
+.thumbs canvas:hover { border-color:var(--bad); }
+.hint { font-size:12px; color:var(--mute); }
+button { font:inherit; border:1px solid #bdbdb6; background:#fff; border-radius:7px; padding:7px 12px; cursor:pointer; }
+button:hover { background:#f0f0ec; }
+button:disabled { opacity:.45; cursor:default; }
+.row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+#pad { display:block; background:#fff; border:2px solid #1b1b1b; border-radius:8px; touch-action:none; cursor:crosshair; }
+.addbtn { color:#fff; border:none; font-weight:600; }
+.addbtn:hover { filter:brightness(1.08); background:inherit; }
+.bar { margin:8px 0; }
+.bar-l { display:flex; justify-content:space-between; font-size:14px; }
+.bar-t { height:16px; background:#eee; border-radius:8px; overflow:hidden; }
+.bar-f { height:100%; width:0; transition:width .25s; }
+#verdict { font-size:22px; font-weight:700; min-height:32px; margin:4px 0 6px; }
+#see { image-rendering:pixelated; width:128px; height:128px; border:1px solid var(--line); border-radius:4px; background:#fff; }
+.tally { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+.tally b { font-size:20px; }
+.ok { color:var(--ok); border-color:var(--ok); }
+.bad { color:var(--bad); border-color:var(--bad); }
+.small { font-size:13px; }
+footer { text-align:center; color:var(--mute); font-size:12px; padding:6px 0 18px; }
+</style>
+</head>
+<body>
+<header><h1>Обучи свой ИИ</h1><span>Основы ИИ · урок 4 · работает без интернета</span></header>
+<main>
+  <section class="card">
+    <h2>1. Классы и примеры</h2>
+    <div id="classes"></div>
+    <div class="row">
+      <button id="addClass">+ Добавить класс</button>
+      <button id="resetAll" title="Нажмите дважды">Сбросить всё</button>
+    </div>
+    <p class="hint">Имя класса можно поменять — щёлкните по нему. Щелчок по маленькой картинке удаляет этот пример.</p>
+  </section>
+
+  <section class="card">
+    <h2>2. Рисуйте здесь</h2>
+    <canvas id="pad" width="300" height="300"></canvas>
+    <div class="row"><button id="clear">Очистить</button></div>
+    <div class="row" id="addRow"></div>
+    <p class="hint" id="addHint">Нарисуйте пример и нажмите кнопку класса, чтобы добавить его в обучающие данные.</p>
+  </section>
+
+  <section class="card">
+    <h2>3. Что думает машина</h2>
+    <div id="verdict">—</div>
+    <div id="bars"></div>
+    <p class="hint" id="predHint">Добавьте хотя бы по одному примеру в два класса — и машина начнёт угадывать каждый новый рисунок.</p>
+    <h2 style="margin-top:16px">Как видит машина</h2>
+    <div style="display:flex;gap:12px;align-items:center">
+      <canvas id="see" width="16" height="16"></canvas>
+      <span class="small">Ваш рисунок для машины — это всего 256 чисел: насколько тёмная каждая клеточка 16×16.</span>
+    </div>
+    <h2 style="margin-top:16px">Проверка</h2>
+    <div class="tally">
+      <button class="ok" id="tOk">✓ Угадала</button>
+      <button class="bad" id="tBad">✗ Ошиблась</button>
+      <span>Угадала <b id="tScore">0 из 0</b></span>
+      <button id="tReset" class="small">обнулить</button>
+    </div>
+    <p class="hint">Рисуйте новые картинки, не добавляя их в классы, и отмечайте, угадала ли машина.</p>
+  </section>
+</main>
+<footer>Машина не «понимает» рисунок: она ищет среди ваших примеров самые похожие по этим 256 числам.</footer>
+
+<script>
+(function () {
+  var COLORS = ["#2a5bd7", "#d9822b", "#1f8a4c", "#9b3fb5"];
+  var N = 16, MAXC = 4;
+  var classes = [];
+  var pad = document.getElementById("pad"), ctx = pad.getContext("2d");
+  var see = document.getElementById("see"), sctx = see.getContext("2d");
+  var drawing = false, last = null, hasInk = false, lastVec = null;
+  var ok = 0, bad = 0;
+
+  function clearPad() {
+    ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, pad.width, pad.height);
+    hasInk = false; lastVec = null; drawSee(null); showPred(null);
+  }
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  clearPad();
+
+  function pos(e) {
+    var r = pad.getBoundingClientRect();
+    var t = e.touches ? e.touches[0] : e;
+    return { x: (t.clientX - r.left) * pad.width / r.width, y: (t.clientY - r.top) * pad.height / r.height };
+  }
+  function start(e) { e.preventDefault(); drawing = true; last = pos(e); dot(last); }
+  function move(e) {
+    if (!drawing) return; e.preventDefault();
+    var p = pos(e);
+    ctx.strokeStyle = "#111"; ctx.lineWidth = 14;
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    last = p; hasInk = true;
+  }
+  function dot(p) { ctx.fillStyle = "#111"; ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, 6.3); ctx.fill(); hasInk = true; }
+  function end() { if (!drawing) return; drawing = false; update(); }
+  if (window.PointerEvent) {
+    pad.addEventListener("pointerdown", function (e) { pad.setPointerCapture && pad.setPointerCapture(e.pointerId); start(e); });
+    pad.addEventListener("pointermove", move);
+    pad.addEventListener("pointerup", end); pad.addEventListener("pointercancel", end);
+  } else {
+    pad.addEventListener("mousedown", start); window.addEventListener("mousemove", move); window.addEventListener("mouseup", end);
+    pad.addEventListener("touchstart", start); pad.addEventListener("touchmove", move); pad.addEventListener("touchend", end);
+  }
+
+  // Рисунок -> 256 чисел: обрезаем по рисунку, вписываем в квадрат, уменьшаем до 16x16
+  function vectorize() {
+    var w = pad.width, h = pad.height, d = ctx.getImageData(0, 0, w, h).data;
+    var x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (var y = 0; y < h; y++) for (var x = 0; x < w; x++) {
+      if (d[(y * w + x) * 4] < 128) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (x1 < 0) return null;
+    var bw = x1 - x0 + 1, bh = y1 - y0 + 1, side = Math.max(bw, bh) * 1.15;
+    var tmp = document.createElement("canvas"); tmp.width = N; tmp.height = N;
+    var t = tmp.getContext("2d"); t.fillStyle = "#fff"; t.fillRect(0, 0, N, N);
+    t.imageSmoothingEnabled = true; if ("imageSmoothingQuality" in t) t.imageSmoothingQuality = "high";
+    var sx = x0 + bw / 2 - side / 2, sy = y0 + bh / 2 - side / 2;
+    // два шага уменьшения для мягкого усреднения
+    var mid = document.createElement("canvas"); mid.width = 64; mid.height = 64;
+    var m = mid.getContext("2d"); m.fillStyle = "#fff"; m.fillRect(0, 0, 64, 64);
+    m.drawImage(pad, sx, sy, side, side, 0, 0, 64, 64);
+    t.drawImage(mid, 0, 0, 64, 64, 0, 0, N, N);
+    var td = t.getImageData(0, 0, N, N).data, v = new Array(N * N), s = 0;
+    for (var i = 0; i < N * N; i++) { v[i] = 1 - td[i * 4] / 255; s += v[i] * v[i]; }
+    s = Math.sqrt(s) || 1;
+    var u = v.map(function (a) { return a / s; });
+    return { raw: v, unit: u };
+  }
+  function dist(a, b) { var s = 0; for (var i = 0; i < a.length; i++) { var q = a[i] - b[i]; s += q * q; } return Math.sqrt(s); }
+
+  function predict(vec) {
+    var usable = classes.filter(function (c) { return c.ex.length > 0; });
+    if (usable.length < 2) return null;
+    var scores = classes.map(function (c) {
+      if (!c.ex.length) return null;
+      var ds = c.ex.map(function (e) { return dist(vec.unit, e.unit); }).sort(function (a, b) { return a - b; });
+      var k = Math.min(3, ds.length), m = 0; for (var i = 0; i < k; i++) m += ds[i]; return m / k;
+    });
+    var BETA = 9, ex = scores.map(function (s) { return s === null ? 0 : Math.exp(-BETA * s); });
+    var tot = ex.reduce(function (a, b) { return a + b; }, 0) || 1;
+    return ex.map(function (e) { return e / tot; });
+  }
+
+  function drawSee(vec) {
+    var img = sctx.createImageData(N, N);
+    for (var i = 0; i < N * N; i++) {
+      var g = vec ? Math.round(255 * (1 - Math.min(1, vec.raw[i]))) : 255;
+      img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = g; img.data[i * 4 + 3] = 255;
+    }
+    sctx.putImageData(img, 0, 0);
+  }
+  function thumb(vec, color) {
+    var c = document.createElement("canvas"); c.width = N; c.height = N;
+    var x = c.getContext("2d"), img = x.createImageData(N, N);
+    for (var i = 0; i < N * N; i++) {
+      var g = Math.round(255 * (1 - Math.min(1, vec.raw[i])));
+      img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = g; img.data[i * 4 + 3] = 255;
+    }
+    x.putImageData(img, 0, 0); return c;
+  }
+
+  function showPred(p) {
+    var bars = document.getElementById("bars"), verdict = document.getElementById("verdict");
+    bars.innerHTML = "";
+    classes.forEach(function (c, i) {
+      var pct = p ? Math.round(p[i] * 100) : 0;
+      var el = document.createElement("div"); el.className = "bar";
+      el.innerHTML = '<div class="bar-l"><span></span><b>' + (p ? pct + "%" : "") + '</b></div><div class="bar-t"><div class="bar-f"></div></div>';
+      el.querySelector("span").textContent = c.name;
+      var f = el.querySelector(".bar-f"); f.style.background = c.color;
+      bars.appendChild(el);
+      requestAnimationFrame(function () { f.style.width = pct + "%"; });
+    });
+    if (p) {
+      var bi = 0; p.forEach(function (v, i) { if (v > p[bi]) bi = i; });
+      verdict.textContent = "Это " + classes[bi].name + "!";
+      verdict.style.color = classes[bi].color;
+    } else { verdict.textContent = "—"; verdict.style.color = ""; }
+    document.getElementById("predHint").style.display = classes.filter(function (c) { return c.ex.length; }).length < 2 ? "" : "none";
+  }
+
+  function update() {
+    if (!hasInk) return;
+    lastVec = vectorize(); drawSee(lastVec); showPred(lastVec ? predict(lastVec) : null);
+  }
+
+  function addExample(i) {
+    if (!hasInk) { flashHint(); return; }
+    var v = lastVec || vectorize(); if (!v) return;
+    classes[i].ex.push(v); renderClasses(); clearPad();
+  }
+  function flashHint() {
+    var h = document.getElementById("addHint"); h.style.color = "#c23b2a";
+    setTimeout(function () { h.style.color = ""; }, 900);
+  }
+
+  function renderClasses() {
+    var box = document.getElementById("classes"); box.innerHTML = "";
+    var row = document.getElementById("addRow"); row.innerHTML = "";
+    classes.forEach(function (c, i) {
+      var el = document.createElement("div"); el.className = "cls";
+      el.innerHTML = '<div class="cls-top"><span class="dot"></span><input maxlength="20"><span class="count"></span><button title="Удалить класс" class="small">×</button></div><div class="thumbs"></div>';
+      el.querySelector(".dot").style.background = c.color;
+      var inp = el.querySelector("input"); inp.value = c.name;
+      inp.addEventListener("input", function () { c.name = inp.value || ("Класс " + (i + 1)); renderButtons(); if (lastVec) showPred(predict(lastVec)); });
+      el.querySelector(".count").textContent = c.ex.length + " " + plural(c.ex.length);
+      var del = el.querySelector("button"); del.disabled = classes.length <= 2;
+      del.addEventListener("click", function () { classes.splice(i, 1); renderClasses(); if (lastVec) showPred(predict(lastVec)); else showPred(null); });
+      var th = el.querySelector(".thumbs");
+      c.ex.forEach(function (e, j) {
+        var t = thumb(e); t.title = "Удалить этот пример";
+        t.addEventListener("click", function () { c.ex.splice(j, 1); renderClasses(); if (lastVec) showPred(predict(lastVec)); });
+        th.appendChild(t);
+      });
+      box.appendChild(el);
+    });
+    renderButtons();
+    document.getElementById("addClass").disabled = classes.length >= MAXC;
+  }
+  function renderButtons() {
+    var row = document.getElementById("addRow"); row.innerHTML = "";
+    classes.forEach(function (c, i) {
+      var b = document.createElement("button"); b.className = "addbtn"; b.style.background = c.color;
+      b.textContent = "Это " + c.name; b.addEventListener("click", function () { addExample(i); });
+      row.appendChild(b);
+    });
+  }
+  function plural(n) { var a = n % 10, b = n % 100; if (a === 1 && b !== 11) return "пример"; if (a >= 2 && a <= 4 && (b < 12 || b > 14)) return "примера"; return "примеров"; }
+  function newClass(name) {
+    var used = classes.map(function (c) { return c.color; });
+    var color = COLORS.filter(function (c) { return used.indexOf(c) < 0; })[0];
+    classes.push({ name: name, color: color, ex: [] });
+  }
+
+  document.getElementById("clear").addEventListener("click", clearPad);
+  document.getElementById("addClass").addEventListener("click", function () { if (classes.length < MAXC) { newClass("Класс " + (classes.length + 1)); renderClasses(); showPred(lastVec ? predict(lastVec) : null); } });
+  var armed = false;
+  document.getElementById("resetAll").addEventListener("click", function () {
+    var b = this;
+    if (!armed) { armed = true; b.textContent = "Точно? Нажмите ещё раз"; setTimeout(function () { armed = false; b.textContent = "Сбросить всё"; }, 2500); return; }
+    armed = false; b.textContent = "Сбросить всё";
+    classes = []; newClass("Круг"); newClass("Крестик"); ok = bad = 0; score(); renderClasses(); clearPad();
+  });
+  function score() { document.getElementById("tScore").textContent = ok + " из " + (ok + bad); }
+  document.getElementById("tOk").addEventListener("click", function () { ok++; score(); clearPad(); });
+  document.getElementById("tBad").addEventListener("click", function () { bad++; score(); clearPad(); });
+  document.getElementById("tReset").addEventListener("click", function () { ok = bad = 0; score(); });
+
+  newClass("Круг"); newClass("Крестик"); renderClasses(); showPred(null);
+  window.__app = { classes: classes, predict: predict, vectorize: vectorize };
+})();
+</script>
+</body>
+</html>
